@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.Intrinsics.X86;
 
 namespace Fastre
 {
@@ -34,12 +35,14 @@ namespace Fastre
 
         public unsafe bool Accepts(ReadOnlySpan<byte> inputt)
         {
+            //Debugger.Break();
+
             var vecImpl = default(TVectorImpl);
 
             var transition = vecImpl.Id;
 
-            // we fix these arrays here to avoid bounds-checks
-            // the .NET JITter cannot yet elide on ReadOnlySpan
+            // we use pointer arithemtic here to avoid bounds-checks
+            // that the .NET JITter cannot elide
             fixed (sbyte* transitions = _transitions)
             fixed (byte* input = inputt)
             {
@@ -48,21 +51,29 @@ namespace Fastre
 
                 for (; at + 6 < end; at += 7)
                 {
-                    var i0 = at[0];
-                    var i1 = at[1];
-                    var i2 = at[2];
-                    var i3 = at[3];
-                    var i4 = at[4];
-                    var i5 = at[5];
-                    var i6 = at[6];
+                    var i0 = (long)at[0];
+                    var i1 = (long)at[1];
+                    var i2 = (long)at[2];
+                    var i3 = (long)at[3];
+                    var i4 = (long)at[4];
+                    var i5 = (long)at[5];
+                    var i6 = (long)at[6];
 
-                    var t1 = vecImpl.Load(transitions + (i0 * vecImpl.VectorByteWidth));
-                    var t2 = vecImpl.Load(transitions + (i1 * vecImpl.VectorByteWidth));
-                    var t3 = vecImpl.Load(transitions + (i2 * vecImpl.VectorByteWidth));
-                    var t4 = vecImpl.Load(transitions + (i3 * vecImpl.VectorByteWidth));
-                    var t5 = vecImpl.Load(transitions + (i4 * vecImpl.VectorByteWidth));
-                    var t6 = vecImpl.Load(transitions + (i5 * vecImpl.VectorByteWidth));
-                    var t7 = vecImpl.Load(transitions + (i6 * vecImpl.VectorByteWidth));
+                    var t1p = transitions + (i0 * vecImpl.VectorByteWidth);
+                    var t2p = transitions + (i1 * vecImpl.VectorByteWidth);
+                    var t3p = transitions + (i2 * vecImpl.VectorByteWidth);
+                    var t4p = transitions + (i3 * vecImpl.VectorByteWidth);
+                    var t5p = transitions + (i4 * vecImpl.VectorByteWidth);
+                    var t6p = transitions + (i5 * vecImpl.VectorByteWidth);
+                    var t7p = transitions + (i6 * vecImpl.VectorByteWidth);
+
+                    var t1 = vecImpl.Load(t1p);
+                    var t2 = vecImpl.Load(t2p);
+                    var t3 = vecImpl.Load(t3p);
+                    var t4 = vecImpl.Load(t4p);
+                    var t5 = vecImpl.Load(t5p);
+                    var t6 = vecImpl.Load(t6p);
+                    var t7 = vecImpl.Load(t7p);
 
                     var t01 = vecImpl.Shuffle(t1, transition);
                     var t23 = vecImpl.Shuffle(t3, t2);

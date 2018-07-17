@@ -1,11 +1,11 @@
-﻿using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Attributes.Jobs;
-using BenchmarkDotNet.Running;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Intrinsics;
 using System.Text;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes.Jobs;
+using BenchmarkDotNet.Running;
 
 namespace Fastre
 {
@@ -53,7 +53,7 @@ namespace Fastre
             }
         }
 
-        [Params(1_000, 10_000, 100_000)]
+        [Params(100_000)]
         public int N;
 
         //[Benchmark]
@@ -79,6 +79,7 @@ namespace Fastre
 
         public static void Main(string[] args)
         {
+            //new Program().VectoredMatcher();
             var summary = BenchmarkRunner.Run<Program>();
         }
     }

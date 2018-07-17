@@ -77,11 +77,12 @@ namespace Fastre
                 }
             }
 
-            var result = new DeterministicStateMachine<T>(
-                0,
-                explored.Count,
-                (item, state) => transitions[(item, state)],
-                explored.Where(kvp => kvp.Key.AcceptsEmptyString).Select(kvp => kvp.Value));
+            var result =
+                new DeterministicStateMachine<T>(
+                    0,
+                    explored.Count,
+                    (item, state) => transitions[(item, state)],
+                    explored.Where(kvp => kvp.Key.AcceptsEmptyString).Select(kvp => kvp.Value));
 
             return result.Optimized(options);
         }
