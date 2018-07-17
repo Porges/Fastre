@@ -33,14 +33,25 @@ namespace Fastre
 
             if (typeof(T) == typeof(byte))
             {
-                if (!options.HasFlag(CompilationOptions.NoSse) &&
-                    MonoidalStateMachineILPUnsafe2<Vector128Impl, Vector128<sbyte>>.CanBeUsed(_stateCount))
+                if (!options.HasFlag(CompilationOptions.NoSse))
                 {
-                    return (IMatcher<T>)(object)new MonoidalStateMachineILPUnsafe2<Vector128Impl, Vector128<sbyte>>(
-                        (sbyte)_initialState,
-                        _stateCount,
-                        (input, state) => (sbyte)_transitionFunction((T)(object)input, state),
-                        _acceptingStates.Select(x => (sbyte)x).ToArray());
+                    if (VectoredMatcher<Vector128Impl, Vector128<sbyte>>.CanBeUsed(_stateCount))
+                    {
+                        return (IMatcher<T>)(object)new VectoredMatcher<Vector128Impl, Vector128<sbyte>>(
+                            (sbyte)_initialState,
+                            _stateCount,
+                            (input, state) => (sbyte)_transitionFunction((T)(object)input, state),
+                            _acceptingStates.Select(x => (sbyte)x).ToArray());
+                    }
+
+                    if (VectoredMatcher<Vector256Impl, Vector256<sbyte>>.CanBeUsed(_stateCount))
+                    {
+                        return (IMatcher<T>)(object)new VectoredMatcher<Vector256Impl, Vector256<sbyte>>(
+                            (sbyte)_initialState,
+                            _stateCount,
+                            (input, state) => (sbyte)_transitionFunction((T)(object)input, state),
+                            _acceptingStates.Select(x => (sbyte)x).ToArray());
+                    }
                 }
 
                 if (LookupStateMachine.CanBeUsed(_stateCount))

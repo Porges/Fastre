@@ -8,42 +8,47 @@ namespace Fastre.Tests
 {
     static class Generators
     {
-        //public static Gen<Regex<char>> Regex { get; } = Gen.Sized(FSharpFunc<int, Gen<Regex<char>>>.FromConverter(Regex));
+        public static Gen<Regex<char>> Regex { get; } = DefineGen();
 
-        //public static Gen<Regex<char>> Regex(int n)
-        //{
-        //    Gen.ChoiceRecursive(
-        //        new[]
-        //        {
-        //            from c in Gen.Unicode
-        //            select Regex<char>.Just(c),
+        private sealed class GetRegex : FSharpFunc<Unit, Gen<Regex<char>>>
+        {
+            // gross
+            public override Gen<Regex<char>> Invoke(Unit func) => Regex;
+        }
 
-        //            Gen.Int16()
+        private static Gen<Regex<char>> DefineGen()
+        {
+            var delayedRegex = Gen.Delay(new GetRegex());
+            return Gen.ChoiceRecursive(
+                new[]
+                {
+                    from c in Gen.Unicode
+                    select Regex<char>.Just(c),
 
-        //            Gen.Constant(Regex<char>.Fail),
+                    Gen.Constant(Regex<char>.Fail),
 
-        //            Gen.Constant(Regex<char>.Epsilon),
-        //        },
-        //        new[]
-        //        {
-        //            from c in Regex
-        //            select ~c,
+                    Gen.Constant(Regex<char>.Epsilon),
+                },
+                new[]
+                {
+                    from c in delayedRegex
+                    select ~c,
 
-        //            from c in Regex
-        //            select !c,
+                    from c in delayedRegex
+                    select !c,
 
-        //            from l in Regex
-        //            from r in Regex
-        //            select l * r,
+                    from l in delayedRegex
+                    from r in delayedRegex
+                    select l * r,
 
-        //            from l in Regex
-        //            from r in Regex
-        //            select l + r,
+                    from l in delayedRegex
+                    from r in delayedRegex
+                    select l + r,
 
-        //            from l in Regex
-        //            from r in Regex
-        //            select l & r,
-        //        });
-        //}
+                    from l in delayedRegex
+                    from r in delayedRegex
+                    select l & r,
+                });
+        }
     }
 }

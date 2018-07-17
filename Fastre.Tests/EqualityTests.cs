@@ -1,34 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Hedgehog;
 using Xunit;
 
 namespace Fastre.Tests
 {
     /// <summary>
     /// This class checks that the expected normalizations are performed.
+    /// They are all taken from the paper: https://www.cs.kent.ac.uk/people/staff/sao/documents/jfp09.pdf
     /// </summary>
     public class EqualityTests
     {
-        static readonly Regex<char> _rA = Regex<char>.Just('a');
-        static readonly Regex<char> _rB = Regex<char>.Just('b');
-        static readonly Regex<char> _rC = Regex<char>.Just('c');
         static readonly Regex<char> _fail = Regex<char>.Fail;
         static readonly Regex<char> _eps = Regex<char>.Epsilon;
 
-        [Fact]
-        public void SingleChar()
-            => Assert.Equal(_rA, _rA);
-
-        [Fact]
-        public void SingleCharNot()
-            => Assert.NotEqual(_rA, _rB);
-
-        // TODO: parametrize the below tests
+        private static readonly Property<Regex<char>> SomeRegex = Property.ForAll(Generators.Regex);
 
         [Fact]
         public void Star_Idempotent()
-            => Assert.Equal(~_rA, ~~_rA);
+            => Property.Check(
+                from rex in SomeRegex
+                select Assert.Equal(~rex, ~~rex));
 
         [Fact]
         public void Star_Eps_NoChange()
@@ -40,82 +30,100 @@ namespace Fastre.Tests
 
         [Fact]
         public void Not_Involution()
-            => Assert.Equal(_rA, !!_rA);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(rex, !!rex));
 
         [Fact]
         public void And_Idempotent()
-            => Assert.Equal(_rA, _rA & _rA);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(rex, rex & rex));
 
         [Fact]
         public void And_Commutative()
-            => Assert.Equal(_rA & _rB, _rB & _rA);
+            => Property.Check(
+                from rex1 in SomeRegex
+                from rex2 in SomeRegex
+                select Assert.Equal(rex1 & rex2, rex2 & rex1));
 
         [Fact]
         public void And_Associative()
-            => Assert.Equal(_rA & (_rB & _rC), (_rA & _rB) & _rC);
+            => Property.Check(
+                from rex1 in SomeRegex
+                from rex2 in SomeRegex
+                from rex3 in SomeRegex
+                select Assert.Equal(rex1 & (rex2 & rex3), (rex1 & rex2) & rex3));
 
         [Fact]
         public void And_Fail_Absorbing_Left()
-            => Assert.Equal(_fail, _fail & _rA);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(_fail, _fail & rex));
 
         [Fact]
         public void And_Fail_Absorbing_Right()
-            => Assert.Equal(_fail, _rA & _fail);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(_fail, rex & _fail));
 
         [Fact]
         public void And_NotFail_Identity_Left()
-            => Assert.Equal(_rA, !_fail & _rA);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(rex, !_fail & rex));
 
         [Fact]
         public void And_NotFail_Identity_Right()
-            => Assert.Equal(_rA, _rA & !_fail);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(rex, rex & !_fail));
 
         [Fact]
         public void Or_Idempotent()
-            => Assert.Equal(_rA, _rA + _rA);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(rex, rex + rex));
 
         [Fact]
         public void Or_Commutative()
-            => Assert.Equal(_rA + _rB, _rB + _rA);
+            => Property.Check(
+                from rex1 in SomeRegex
+                from rex2 in SomeRegex
+                select Assert.Equal(rex1 + rex2, rex2 + rex1));
 
         [Fact]
         public void Or_Associative()
-            => Assert.Equal(_rA + (_rB + _rC), (_rA + _rB) + _rC);
+            => Property.Check(
+                from rex1 in SomeRegex
+                from rex2 in SomeRegex
+                from rex3 in SomeRegex
+                select Assert.Equal(rex1 + (rex2 + rex3), (rex1 + rex2) + rex3));
 
         [Fact]
         public void Or_Fail_Identity_Left()
-            => Assert.Equal(_rA, _fail + _rA);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(rex, _fail + rex));
 
         [Fact]
         public void Or_Fail_Identity_Right()
-            => Assert.Equal(_rA, _rA + _fail);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(rex, rex + _fail));
 
         [Fact]
         public void Or_NotFail_Absorbing_Left()
-            => Assert.Equal(!_fail, !_fail + _rA);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(!_fail, !_fail + rex));
 
         [Fact]
         public void Or_NotFail_Absorbing_Right()
-            => Assert.Equal(!_fail, _rA + !_fail);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(!_fail, rex + !_fail));
 
         [Fact]
         public void Seq_Associative()
-            => Assert.Equal(_rA * (_rB * _rC), (_rA * _rB) * _rC);
+            => Property.Check(
+                from rex1 in SomeRegex
+                from rex2 in SomeRegex
+                from rex3 in SomeRegex
+                select Assert.Equal(rex1 * (rex2 * rex3), (rex1 * rex2) * rex3));
 
         [Fact]
         public void Seq_Fail_Absorbing_Left()
-            => Assert.Equal(_fail, _fail * _rA);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(_fail, _fail * rex));
 
         [Fact]
         public void Seq_Fail_Absorbing_Right()
-            => Assert.Equal(_fail, _rA * _fail);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(_fail, rex * _fail));
 
         [Fact]
         public void Seq_Eps_Identity_Left()
-            => Assert.Equal(_rA, _eps * _rA);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(rex, _eps * rex));
 
         [Fact]
         public void Seq_Eps_Identity_Right()
-            => Assert.Equal(_rA, _rA * _eps);
+            => Property.Check(from rex in SomeRegex select Assert.Equal(rex, rex * _eps));
     }
 }

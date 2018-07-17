@@ -15,7 +15,7 @@ namespace Fastre
             _accept = accept.ToArray();
         }
 
-        public bool Run(in ReadOnlySpan<byte> input)
+        public bool Run(ReadOnlySpan<byte> input)
         {
             var state = _start;
             for (int i = 0; i < input.Length; ++i)

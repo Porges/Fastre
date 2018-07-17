@@ -21,14 +21,14 @@ namespace Fastre
         private static readonly MonoidalStateMachineUnsafe _monoidalUnsafe = new MonoidalStateMachineUnsafe(Start, TransitionFunc, Accept);
         private static readonly MonoidalStateMachineILP _monoidalILP = new MonoidalStateMachineILP(Start, TransitionFunc, Accept);
         private static readonly MonoidalStateMachineILPUnsafe _monoidalILPUnsafe = new MonoidalStateMachineILPUnsafe(Start, TransitionFunc, Accept);
-        private static readonly MonoidalStateMachineILPUnsafe2<Vector128Impl, Vector128<sbyte>> _monoidalILPUnsafe2 = new MonoidalStateMachineILPUnsafe2<Vector128Impl, Vector128<sbyte>>(Start, 2, TransitionFunc, Accept);
+        private static readonly VectoredMatcher<Vector128Impl, Vector128<sbyte>> _vectoredMatcher = new VectoredMatcher<Vector128Impl, Vector128<sbyte>>(Start, 2, TransitionFunc, Accept);
 
         private byte[] Data;
 
         [GlobalSetup]
         public void Setup()
         {
-            Data = Encoding.UTF8.GetBytes("/*" + new string(' ', N) + "*/");
+            Data = Encoding.UTF8.GetBytes("/*" + new string(' ', N-4) + "*/");
         }
 
         private static sbyte TransitionFunc(byte input, sbyte state)
@@ -53,29 +53,29 @@ namespace Fastre
             }
         }
 
-        [Params(/*1_000, 10_000, */100_000)]
+        [Params(1_000, 10_000, 100_000)]
         public int N;
 
-        [Benchmark]
-        public bool Direct() => _direct.Run(Data);
+        //[Benchmark]
+        //public bool Direct() => _direct.Run(Data);
 
-        [Benchmark]
-        public bool Lookup() => _lookup.Accepts(Data);
+        //[Benchmark]
+        //public bool Lookup() => _lookup.Accepts(Data);
 
-        [Benchmark]
-        public bool Monoidal() => _monoidal.Accepts(Data);
+        //[Benchmark]
+        //public bool Monoidal() => _monoidal.Accepts(Data);
 
-        [Benchmark]
-        public bool MonoidalUnsafe() => _monoidalUnsafe.Accepts(Data);
+        //[Benchmark]
+        //public bool MonoidalUnsafe() => _monoidalUnsafe.Accepts(Data);
 
-        [Benchmark]
-        public bool MonoidalILP() => _monoidalILP.Accepts(Data);
+        //[Benchmark]
+        //public bool MonoidalILP() => _monoidalILP.Accepts(Data);
 
         [Benchmark]
         public bool MonoidalILPUnsafe() => _monoidalILPUnsafe.Accepts(Data);
 
         [Benchmark]
-        public bool MonoidalILPUnsafe2() => _monoidalILPUnsafe2.Accepts(Data);
+        public bool VectoredMatcher() => _vectoredMatcher.Accepts(Data);
 
         public static void Main(string[] args)
         {
