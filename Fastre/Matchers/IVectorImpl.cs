@@ -16,10 +16,16 @@
 
         TVectorType Id { get; }
 
+        TVectorType Zero { get; }
+
+        bool IsZero(TVectorType vector);
+
         unsafe TVectorType Load(sbyte* ptr);
 
         TVectorType Shuffle(TVectorType vec, TVectorType mask);
 
         sbyte Extract(TVectorType vec, byte index);
+
+        unsafe byte* MemChr(byte lookFor, byte* start, byte* end);
     }
 }

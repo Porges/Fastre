@@ -43,15 +43,6 @@ namespace Fastre
                             (input, state) => (sbyte)_transitionFunction((T)(object)input, state),
                             _acceptingStates.Select(x => (sbyte)x).ToArray());
                     }
-
-                    if (VectoredMatcher<Vector256Impl, Vector256<sbyte>>.CanBeUsed(_stateCount))
-                    {
-                        return (IMatcher<T>)(object)new VectoredMatcher<Vector256Impl, Vector256<sbyte>>(
-                            (sbyte)_initialState,
-                            _stateCount,
-                            (input, state) => (sbyte)_transitionFunction((T)(object)input, state),
-                            _acceptingStates.Select(x => (sbyte)x).ToArray());
-                    }
                 }
 
                 if (LookupStateMachine.CanBeUsed(_stateCount))

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Hedgehog;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Xunit;
@@ -7,16 +8,6 @@ namespace Fastre.Tests
 {
     public sealed class CompilationTests
     {
-        public static object[][] Examples =
-        {
-            new object []{ "a".Literal(), new[]{"a", "b", "" } },
-            new object []{ "a".Literal() + "b".Literal(), new[]{"a", "b", "c", "" } },
-            new object []{ "a".Literal() & "b".Literal(), new[]{"a", "b", "c", "" } },
-            new object []{ "a".Literal() * "b".Literal(), new[]{"a", "ab", "b", "c", "" } },
-            new object []{ ~("a".Literal()) * "b".Literal(), new[]{"a", "ab", "aab", "aaaaaaaaaaaaaaaaaaaaaaab", "b", "c", "" } },
-            new object []{ !("a".Literal()), new[]{"a", "b", "" } },
-        };
-
         private static IEnumerable<char> AllChars()
         {
             for (int i = 0; i <= char.MaxValue; ++i)
@@ -25,44 +16,38 @@ namespace Fastre.Tests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(Examples))]
-        public void Compilation_Preserves_Accepts_Result(Regex<char> regex, string[] examples)
-            => Assert.All(
-                examples,
-                example =>
-                    Assert.Equal(
-                        regex.Accepts(example),
-                        regex.Compile(AllChars()).Accepts(example)));
+        private static readonly Property<Regex<char>> SomeRegex =
+            Property.ForAll(Generators.Regex);
 
-        [Theory]
-        [MemberData(nameof(Examples))]
-        public void Compilation_Preserves_Accepts_Result_UTF8(Regex<char> regex, string[] examples)
-            => Assert.All(
-                examples,
-                example =>
-                    Assert.Equal(
-                        regex.Accepts(example),
-                        regex.Compile(Encoding.UTF8).Accepts(Encoding.UTF8.GetBytes(example))));
+        private static readonly Property<string> SomeString =
+            Property.ForAll(Gen.String(Range.Constant(0, 100), Gen.Unicode));
 
-        [Theory]
-        [MemberData(nameof(Examples))]
-        public void Compilation_Preserves_Accepts_Result_UTF16(Regex<char> regex, string[] examples)
-            => Assert.All(
-                examples,
-                example =>
-                    Assert.Equal(
-                        regex.Accepts(example),
-                        regex.Compile(Encoding.Unicode).Accepts(Encoding.Unicode.GetBytes(example))));
+        [Fact]
+        public void Compilation_Preserves_Accepts_Result()
+            => Property.Check(
+                from rex in SomeRegex
+                from str in SomeString
+                select Assert.Equal(rex.Accepts(str), rex.Compile(AllChars()).Accepts(str)));
 
-        [Theory]
-        [MemberData(nameof(Examples))]
-        public void Compilation_Preserves_Accepts_Result_UTF16_Bytes(Regex<char> regex, string[] examples)
-            => Assert.All(
-                examples,
-                example =>
-                    Assert.Equal(
-                        regex.Accepts(example),
-                        regex.Compile().Accepts(example)));
+        [Fact]
+        public void Compilation_Preserves_Accepts_Result_UTF8()
+            => Property.Check(
+                from rex in SomeRegex
+                from str in SomeString
+                select Assert.Equal(rex.Accepts(str), rex.Compile(Encoding.UTF8).Accepts(Encoding.UTF8.GetBytes(str))));
+
+        [Fact]
+        public void Compilation_Preserves_Accepts_Result_UTF16()
+            => Property.Check(
+                from rex in SomeRegex
+                from str in SomeString
+                select Assert.Equal(rex.Accepts(str), rex.Compile(Encoding.Unicode).Accepts(Encoding.Unicode.GetBytes(str))));
+
+        [Fact]
+        public void Compilation_Preserves_Accepts_Result_UTF16_Bytes()
+            => Property.Check(
+                from rex in SomeRegex
+                from str in SomeString
+                select Assert.Equal(rex.Accepts(str), rex.Compile().Accepts(str)));
     }
 }

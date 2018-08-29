@@ -11,6 +11,8 @@ namespace Fastre
         private readonly sbyte[] _transitions = new sbyte[default(TVectorImpl).VectorByteWidth * (byte.MaxValue + 1)];
         private readonly sbyte[] _accept;
 
+        private readonly (byte input, sbyte state) lookFor;
+
         public static bool CanBeUsed(int stateCount)
         {
             return stateCount <= default(TVectorImpl).VectorByteWidth && default(TVectorImpl).IsSupported;
@@ -22,6 +24,26 @@ namespace Fastre
 
             _start = start;
             _accept = accept.ToArray();
+
+            // See if we can optimize for state 0:
+            for (int i = 0; i <= byte.MaxValue; ++i)
+            {
+                var input = (byte)i;
+                var transitionTo = transitionFunc(input, 0);
+                if (transitionTo != 0)
+                {
+                    if (lookFor.state == 0)
+                    {
+                        lookFor = (input, transitionTo);
+                    }
+                    else
+                    {
+                        // multiple options, can't optimize
+                        lookFor = (0, 0);
+                        break;
+                    }
+                }
+            }
 
             for (int i = 0; i <= byte.MaxValue; ++i)
             {
@@ -35,13 +57,16 @@ namespace Fastre
 
         public unsafe bool Accepts(ReadOnlySpan<byte> inputt)
         {
-            //Debugger.Break();
+            Debugger.Break();
 
             var vecImpl = default(TVectorImpl);
 
-            var transition = vecImpl.Id;
+            // TODO:
+            // if this is processing a parallel chunk, then
+            // this will be vecImpl.Id to start
+            var transition = vecImpl.Zero;
 
-            // we use pointer arithemtic here to avoid bounds-checks
+            // we use pointer arithmetic here to avoid bounds-checks
             // that the .NET JITter cannot elide
             fixed (sbyte* transitions = _transitions)
             fixed (byte* input = inputt)
@@ -51,6 +76,12 @@ namespace Fastre
 
                 for (; at + 6 < end; at += 7)
                 {
+                    if (lookFor.state != 0 && vecImpl.IsZero(transition))
+                    {
+                        // try to quickly match the first state
+                        at = vecImpl.MemChr(lookFor.input, at, end);
+                    }
+
                     var i0 = (long)at[0];
                     var i1 = (long)at[1];
                     var i2 = (long)at[2];

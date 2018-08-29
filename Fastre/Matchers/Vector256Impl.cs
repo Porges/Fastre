@@ -1,33 +1,78 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
 namespace Fastre
 {
     /// <summary>
-    /// See description on <see cref="IVectorImpl{TVectorType}"/>.
+    /// <remarks>
+    /// Unfortunately there's no 256-bit vector shuffle (it treats the input
+    /// as two 128-bit wide vectors), so the only operation that uses 256-bit vectors
+    /// here is memchr.
+    /// </remarks>
     /// </summary>
-    public struct Vector256Impl : IVectorImpl<Vector256<sbyte>>
+    public struct Vector256Impl : IVectorImpl<Vector128<sbyte>>
     {
-        private static readonly Vector256<sbyte> _id =
-            Avx.SetVector256(
-                31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16,
-                15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
+        public bool IsSupported =>
+            default(Vector128Impl).IsSupported;
+            //&& Avx.IsSupported && Avx2.IsSupported && Lzcnt.IsSupported;
 
-        public Vector256<sbyte> Id => _id;
+        public Vector128<sbyte> Id => default(Vector128Impl).Id;
 
-        public bool IsSupported => false; // see TODO below
+        public Vector128<sbyte> Zero => default(Vector128Impl).Zero;
 
-        public int VectorByteWidth => 32;
+        public bool IsZero(Vector128<sbyte> vector) => default(Vector128Impl).IsZero(vector);
 
-        public sbyte Extract(Vector256<sbyte> vec, byte index)
-            => Avx.Extract(vec, index);
+        public int VectorByteWidth => default(Vector128Impl).VectorByteWidth;
 
-        public unsafe Vector256<sbyte> Load(sbyte* ptr)
-            => Avx.LoadVector256(ptr);
+        public sbyte Extract(Vector128<sbyte> vec, byte index) => default(Vector128Impl).Extract(vec, index);
 
-        // TODO: not sure if there's actually a shuffle we can use on AVX...
-        public Vector256<sbyte> Shuffle(Vector256<sbyte> vec, Vector256<sbyte> mask)
-            => throw new NotImplementedException();
+        public unsafe Vector128<sbyte> Load(sbyte* ptr) => default(Vector128Impl).Load(ptr);
+
+        public Vector128<sbyte> Shuffle(Vector128<sbyte> vec, Vector128<sbyte> mask) => default(Vector128Impl).Shuffle(vec, mask);
+
+        public unsafe byte* MemChr(byte byteToLookFor, byte* at, byte* end) => default(Vector128Impl).MemChr(byteToLookFor, at, end);
+
+        // removed for now to remove any potential difference between implemntations
+        //{
+        //    var vecToLookFor = Avx.SetAllVector256(byteToLookFor);
+
+        //    for (; at + 63 < end; at += 64)
+        //    {
+        //        var vec1p = at;
+        //        var vec2p = at + 32;
+
+        //        var vec1 = Avx.LoadVector256(vec1p);
+        //        var vec2 = Avx.LoadVector256(vec2p);
+
+        //        var cmp1 = Avx2.CompareEqual(vecToLookFor, vec1);
+        //        var cmp2 = Avx2.CompareEqual(vecToLookFor, vec2);
+
+        //        var cmpResult1 = (uint)Avx2.MoveMask(cmp1);
+        //        var cmpResult2 = (uint)Avx2.MoveMask(cmp2);
+
+        //        if ((cmpResult1 | cmpResult2) != 0)
+        //        {
+        //            // masks are the reverse of what you'd expect, so we need to
+        //            // look for trailing zeroes
+
+        //            // TODO: replace with intrinsic in .NET Core 3.0
+        //            var tzCnt = TrailingZeros.TrailingZeroes(cmpResult1);
+        //            return at + (tzCnt < 32 ? tzCnt : (tzCnt + TrailingZeros.TrailingZeroes(cmpResult2)));
+        //        }
+        //    }
+
+        //    // find in leftovers
+        //    for (; at < end; ++at)
+        //    {
+        //        if (*at == byteToLookFor)
+        //        {
+        //            break;
+        //        }
+        //    }
+
+        //    return at;
+        //}
     }
 }
